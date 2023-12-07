@@ -78,6 +78,12 @@ def get_progress(block_number):
     return jsonify(progress.get(block_number, {"total": 0, "fetched": 0}))
 
 
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")  # Allows all domains
+    return response
+
+
 @app.route("/")
 def index():
     return render_template("paper.html")
