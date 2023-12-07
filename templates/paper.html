@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Bitcoin Inscription Size Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='paper.min.css') }}">
+</head>
+
+<body>
+    <div class="paper container">
+        <h1 class="text-center">How much space in a Bitcoin block is being used by ordinals?</h1>
+        <form id="blockForm" class="bordered">
+            <input type="number" id="blockNumber" placeholder="Block Number" required>
+            <button type="submit" class="btn-small">Get Size of All Inscriptions</button>
+        </form>
+        <div id="result"></div>
+        <div id="progress"></div>
+    </div>
+
+    <script>
+        document.getElementById('blockForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var blockNumber = document.getElementById('blockNumber').value;
+            console.log('Fetching total size for block number:', blockNumber);
+            fetch('/api/total-size/' + blockNumber)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Total inscription size:', data.totalSize);
+                    console.log('Total block size:', data.blockSize);
+                    console.log('Percentage of block that is ordinal data:', data.ordinalPercentage);
+                    document.getElementById('result').innerHTML = 'Total Inscription Size: ' + data.totalSize.toLocaleString() + ' bytes' +
+                        '<br>Block Size: ' + data.blockSize.toLocaleString() + ' bytes' +
+                        '<br>Ordinal Data Percentage: ' + data.ordinalPercentage.toFixed(2) + '%';
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Set up an interval to periodically fetch the progress
+            var progressInterval = setInterval(function () {
+                fetch('/api/progress/' + blockNumber)
+                    .then(response => response.json())
+                    .then(progressData => {
+                        if (progressData.total > 0) {
+                            var progressPercent = (progressData.fetched / progressData.total * 100).toFixed(2);
+                            document.getElementById('progress').innerText = 'Progress: ' + progressPercent + '%';
+
+                            // Stop the interval if fetching is complete
+                            if (progressData.fetched === progressData.total) {
+                                clearInterval(progressInterval);
+                            }
+                        }
+                    });
+            }, 1000); // Update every second
+        });
+    </script>
+</body>
+
+</html>
